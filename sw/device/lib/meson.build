@@ -42,6 +42,7 @@ sw_lib_pinmux = declare_dependency(
     'pinmux_ot',
     sources: [
       hw_top_earlgrey_pinmux_reg_h,
+      hw_top_earlgrey_padctrl_h,
       'pinmux.c',
     ],
     dependencies: [
