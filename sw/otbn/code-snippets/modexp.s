@@ -1288,7 +1288,7 @@ modexp:
   /* convert back from montgomery domain */
   jal       x1, mul1_exp
 
-  ecall
+  ret
 
 
 /**
@@ -1424,8 +1424,7 @@ modexp_65537:
   /* out = montmul(out,1) = out/R mod M  */
   jal       x1, mul1_exp
 
-  ecall
-
+  ret
 
 /**
  * Externally callable wrapper for computing Montgomery parameters

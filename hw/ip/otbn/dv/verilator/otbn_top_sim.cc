@@ -47,9 +47,7 @@ int main(int argc, char **argv) {
   svSetScope(svGetScopeFromName("TOP.otbn_top_sim"));
 
   svBit model_err = otbn_err_get();
-  if (model_err) {
-    return 1;
-  }
+
 
   std::cout << "Call Stack:" << std::endl;
   std::cout << "-----------" << std::endl;
@@ -108,5 +106,7 @@ int main(int argc, char **argv) {
               << std::endl;
   }
 
-  return 0;
+  if (model_err) {
+    return 1;
+  }
 }
