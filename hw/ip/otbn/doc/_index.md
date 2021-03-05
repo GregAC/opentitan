@@ -105,6 +105,24 @@ A single instruction can both read and write to the stack.
 In this case, the read is ordered before the write.
 Providing the stack has at least one element, this is allowed, even if the stack is full.
 
+
+### Random Numbers
+
+OTBN is connected to the [EDN]({{< relref "hw/ip/edn/doc" >}}) which can provide random numbers via the `RND` and `URND` CSRs and WSRs.
+
+`RND` provides bits taken directly from the EDN.
+As an EDN request can take time `RND` is backed by a single-entry cache containing the result of the most recent EDN request.
+A read from `RND` empties this cache.
+A prefetch into the cache, which can be used to hide the EDN latency, is triggered on any write to the `RND_PREFETCH` CSR.
+If the cache is empty when a read from `RND` occurs a EDN request will be made if one isn't in progress already (due to the prefetch).
+OTBN will stall until the request provides bits.
+Both the `RND` CSR and WSR take their bits from the same cache, `RND` CSR reads simply discard the other 192 bits on a read.
+
+`URND` provides bits from an LFSR, reads from it never stall.
+The `URND` LFSR is seeded once from the EDN when OTBN starts execution.
+Each new execution of OTBN will reseed the `URND` LFSR.
+The LFSR state is advanced every cycle when OTBN is active.
+
 ### Control and Status Registers (CSRs)
 
 Control and Status Registers (CSRs) are 32b wide registers used for "special" purposes, as detailed in their description;
@@ -266,6 +284,27 @@ Writes to read-only registers are ignored; they do not signal an error.
       <td>
         <strong>RND</strong>.
         A random number.
+        The number is sourced from the EDN via a single-entry cache.
+        Reads when the cache is empty will cause OTBN to be stalled until a new random number is fetched from the EDN.
+      </td>
+    </tr>
+    <tr>
+      <td>0xFC1</td>
+      <td>RW</td>
+      <td>
+        <strong>RND_PREFETCH</strong>.
+        Write to this CSR to begin a EDN request to fill the RND cache.
+        Always reads as 0.
+      </td>
+    </tr>
+    <tr>
+      <td>0xFC2</td>
+      <td>R</td>
+      <td>
+        <strong>URND</strong>.
+        A random number.
+        The number is sourced from an LFSR.
+        Reads from this will never stall.
       </td>
     </tr>
   </tbody>
@@ -322,6 +361,8 @@ This WSR is also visible as CSRs `MOD0` through to `MOD7`.
       <td>R</td>
       <td>
         A random number.
+        The number is sourced from the EDN via a single-entry cache.
+        Reads when the cache is empty will cause OTBN to be stalled until a new random number is fetched from the EDN.
       </td>
     </tr>
     <tr>
@@ -330,6 +371,16 @@ This WSR is also visible as CSRs `MOD0` through to `MOD7`.
       <td>RW</td>
       <td>
         The accumulator register used by the BN.MULQACC instruction.
+      </td>
+    </tr>
+    <tr>
+      <td>0x3</td>
+      <td><strong>URND</strong></td>
+      <td>R</td>
+      <td>
+        A random number.
+        The number is sourced from an LFSR.
+        Reads from this will never stall.
       </td>
     </tr>
   </tbody>
