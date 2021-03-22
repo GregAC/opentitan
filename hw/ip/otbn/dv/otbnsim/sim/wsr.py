@@ -90,28 +90,41 @@ class RandWSR(WSR):
     def __init__(self, name: str):
         super().__init__(name)
 
-        # For now, the RTL doesn't have a real "random number generator".
-        # Eventually, it will have an LFSR of some sort, seeded by the
-        # CSRNG/EDN. We'll model that properly when we've specced it out. Until
-        # then, random numbers are constant.  This constant must match the one
-        # in the RTL (the `rnd` signal in the `otbn_core` module found in
-        # rtl/otbn_core.sv). If changed here it must be changed there to match.
-        # Constant for RND is the binary bit pattern 1001 (0x9 hex) repeated to
-        # fill a 256-bit word.
-        u32 = 0x99999999
-        u64 = (u32 << 32) | u32
-        u128 = (u64 << 64) | u64
-        self._random_value = (u128 << 128) | u128
+        self._random_value = None
+        self._random_value_read = False
+        self.requesting_rnd = False
 
     def read_unsigned(self) -> int:
+        assert self._random_value is not None
+
+        self._random_value_read = True
+
         return self._random_value
 
     def read_u32(self) -> int:
         '''Read a 32-bit unsigned result'''
-        return self._random_value & ((1 << 32) - 1)
+        return self.read_unsigned() & ((1 << 32) - 1)
 
     def write_unsigned(self, value: int) -> None:
         return
+
+    def commit(self) -> None:
+        if self._random_value_read:
+            self._random_value = None
+            self.requesting_rnd = False
+
+        self._random_value_read = False
+
+    def request_value(self) -> bool:
+        '''Signals intent to read RND, returns True if a value is available'''
+        if self._random_value:
+            return True
+
+        self.requesting_rnd = True
+
+    def set_unsigned(self, value: int) -> None:
+        assert 0 <= value < (1 << 256)
+        self._random_value = value
 
 
 class WSRFile:

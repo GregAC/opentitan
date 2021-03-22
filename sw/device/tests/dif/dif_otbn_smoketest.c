@@ -11,6 +11,10 @@
 
 #include "hw/top_earlgrey/sw/autogen/top_earlgrey.h"
 
+#define ENTROPY_SRC_CONF_REG_OFFSET 0x18
+#define CSRNG_CTRL_REG_OFFSET 0x14
+#define EDN_CTRL_REG_OFFSET 0x14
+
 OTBN_DECLARE_APP_SYMBOLS(barrett384);
 OTBN_DECLARE_PTR_SYMBOL(barrett384, wrap_barrett384);
 
@@ -129,6 +133,14 @@ static void test_err_test(otbn_t *otbn_ctx) {
 }
 
 bool test_main() {
+  // First of all, we need to get the entropy complex up and running.
+  mmio_region_write32(mmio_region_from_addr(TOP_EARLGREY_ENTROPY_SRC_BASE_ADDR),
+                      ENTROPY_SRC_CONF_REG_OFFSET, 0x2);
+  mmio_region_write32(mmio_region_from_addr(TOP_EARLGREY_CSRNG_BASE_ADDR),
+                      CSRNG_CTRL_REG_OFFSET, 0x1);
+  mmio_region_write32(mmio_region_from_addr(TOP_EARLGREY_EDN0_BASE_ADDR),
+                      EDN_CTRL_REG_OFFSET, 0x1);
+
   dif_otbn_config_t otbn_config = {
       .base_addr = mmio_region_from_addr(TOP_EARLGREY_OTBN_BASE_ADDR),
   };

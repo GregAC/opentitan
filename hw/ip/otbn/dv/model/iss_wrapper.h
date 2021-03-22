@@ -36,6 +36,10 @@ struct ISSWrapper {
   // Jump to a new address and start running
   void start(uint32_t addr);
 
+  void edn_rnd_data(uint32_t edn_rnd_data[8]);
+
+  void edn_urnd_data_valid();
+
   // Run simulation for a single cycle. Returns a pair (ret_code, err_bits).
   //
   // If gen_trace is true, pass trace data to the (singleton)

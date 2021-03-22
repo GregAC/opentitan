@@ -61,17 +61,6 @@ module otbn_core
   input  logic                    edn_urnd_ack_i,
   input  logic [EdnDataWidth-1:0] edn_urnd_data_i
 );
-  // Random number
-  // TODO: Hook up to RNG distribution network
-  // TODO: Decide what guarantees we make for random numbers on CSRs/WSRs, and how they might or
-  // might not come from the same source.
-  logic [WLEN-1:0] rnd;
-
-  // Constant for now until RNG is set up. This constant is the same in the model and must be
-  // altered there to match is altered here (the `_random_value` variable in the `RandWSR` class in
-  // dv/otbn/sim/wsr.py).
-  assign rnd = 256'h9999999999999999999999999999999999999999999999999999999999999999;
-
   // Fetch request (the next instruction)
   logic [ImemAddrWidth-1:0] insn_fetch_req_addr;
   logic                     insn_fetch_req_valid;
@@ -146,6 +135,16 @@ module otbn_core
   logic [WLEN-1:0]             ispr_acc;
   logic [WLEN-1:0]             ispr_acc_wr_data;
   logic                        ispr_acc_wr_en;
+
+  logic            rnd_req;
+  logic            rnd_prefetch_req;
+  logic            rnd_valid;
+  logic [WLEN-1:0] rnd_data;
+
+  logic            urnd_refresh_req;
+  logic            urnd_refresh_busy;
+  logic            urnd_advance;
+  logic [WLEN-1:0] urnd_data;
 
   // Depending on its usage, the instruction address (program counter) is qualified by two valid
   // signals: insn_fetch_resp_valid (together with the undecoded instruction data), and insn_valid
@@ -287,7 +286,15 @@ module otbn_core
     .ispr_base_wr_en_o   (ispr_base_wr_en),
     .ispr_bignum_wdata_o (ispr_bignum_wdata),
     .ispr_bignum_wr_en_o (ispr_bignum_wr_en),
-    .ispr_rdata_i        (ispr_rdata)
+    .ispr_rdata_i        (ispr_rdata),
+
+    .rnd_req_o          (rnd_req),
+    .rnd_prefetch_req_o (rnd_prefetch_req),
+    .rnd_valid_i        (rnd_valid),
+
+    .urnd_refresh_req_o  (urnd_refresh_req),
+    .urnd_refresh_busy_i (urnd_refresh_busy),
+    .urnd_advance_o      (urnd_advance)
   );
 
   // Load store unit: read and write data from data memory
@@ -403,7 +410,8 @@ module otbn_core
     .mac_operation_flags_i    (mac_bignum_operation_flags),
     .mac_operation_flags_en_i (mac_bignum_operation_flags_en),
 
-    .rnd_i                    (rnd)
+    .rnd_data_i               (rnd_data),
+    .urnd_data_i              (urnd_data)
   );
 
   otbn_mac_bignum u_otbn_mac_bignum (
@@ -422,17 +430,28 @@ module otbn_core
     .ispr_acc_wr_en_i   (ispr_acc_wr_en)
   );
 
-  logic                    unused_edn_rnd_ack;
-  logic [EdnDataWidth-1:0] unused_edn_rnd_data;
-  logic                    unused_edn_urnd_ack;
-  logic [EdnDataWidth-1:0] unused_edn_urnd_data;
+  otbn_rnd u_otbn_rnd (
+    .clk_i,
+    .rst_ni,
 
-  // Tie-off EDN interface
-  assign unused_edn_rnd_ack  = edn_rnd_ack_i;
-  assign unused_edn_rnd_data = edn_rnd_data_i;
-  assign edn_rnd_req_o       = 1'b0;
+    .rnd_req_i          (rnd_req),
+    .rnd_prefetch_req_i (rnd_prefetch_req),
+    .rnd_valid_o        (rnd_valid),
+    .rnd_data_o         (rnd_data),
 
-  assign unused_edn_urnd_ack  = edn_urnd_ack_i;
-  assign unused_edn_urnd_data = edn_urnd_data_i;
-  assign edn_urnd_req_o       = 1'b0;
+    .urnd_refresh_req_i  (urnd_refresh_req),
+    .urnd_refresh_busy_o (urnd_refresh_busy),
+    .urnd_advance_i      (urnd_advance),
+    .urnd_data_o         (urnd_data),
+
+    .edn_rnd_req_o,
+    .edn_rnd_ack_i,
+    .edn_rnd_data_i,
+
+    .edn_urnd_req_o,
+    .edn_urnd_ack_i,
+    .edn_urnd_data_i
+  );
+
+  `ASSERT(edn_req_stable, edn_rnd_req_o & ~edn_rnd_ack_i |=> edn_rnd_req_o)
 endmodule

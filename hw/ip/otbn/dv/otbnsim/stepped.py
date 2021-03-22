@@ -37,27 +37,26 @@ prefixed with "0x" if they are hexadecimal.
 '''
 
 import sys
-from typing import List
+from typing import List, Dict
 
 from sim.decode import decode_file
 from sim.elf import load_elf
 from sim.sim import OTBNSim
 
 
-def read_word(arg_name: str, word_data: str) -> int:
-    '''Try to read a 32-bit unsigned word'''
+def read_word(arg_name: str, word_data: str, bits: int) -> int:
+    '''Try to read an unsigned word of the specified bit length'''
     try:
         value = int(word_data, 0)
     except ValueError:
         raise ValueError('Failed to read {!r} as an integer for <{}> argument.'
                          .format(word_data, arg_name)) from None
 
-    if value < 0 or value >> 32:
-        raise ValueError('<{}> argument is {!r}: not representable as a u32.'
-                         .format(arg_name, word_data))
+    if value < 0 or value >> bits:
+        raise ValueError('<{}> argument is {!r}: not representable in {!r} bits.'
+                         .format(arg_name, word_data, bits))
 
     return value
-
 
 def end_command() -> None:
     '''Print a single '.' to stdout and flush, ending the output for command'''
@@ -71,14 +70,13 @@ def on_start(sim: OTBNSim, args: List[str]) -> None:
         raise ValueError('start expects exactly 1 argument. Got {}.'
                          .format(args))
 
-    addr = read_word('addr', args[0])
+    addr = read_word('addr', args[0], 32)
     if addr & 3:
         raise ValueError('start address must be word-aligned. Got {:#08x}.'
                          .format(addr))
 
     print('START {:#08x}'.format(addr))
     sim.state.start(addr)
-
 
 def on_step(sim: OTBNSim, args: List[str]) -> None:
     '''Step one instruction'''
@@ -182,6 +180,20 @@ def on_print_call_stack(sim: OTBNSim, args: List[str]) -> None:
     for value in sim.state.peek_call_stack():
         print('0x{:08x}'.format(value))
 
+def on_edn_rnd_data(sim: OTBNSim, args: List[str]) -> None:
+    if len(args) != 1:
+        raise ValueError('edn_rnd_data expects exactly 1 argument. Got {}.'
+                         .format(args))
+
+    edn_rnd_data = read_word('edn_rnd_data', args[0], 256)
+    sim.state.set_rnd_data(edn_rnd_data)
+
+def on_edn_urnd_data_valid(sim: OTBNSim, args: List[str]) -> None:
+    if len(args):
+        raise ValueError('edn_urnd_data_valid expects zero arguments. Got {}.'
+                         .format(args))
+
+    sim.state.set_urnd_data_valid()
 
 _HANDLERS = {
     'start': on_start,
@@ -192,7 +204,9 @@ _HANDLERS = {
     'load_i': on_load_i,
     'dump_d': on_dump_d,
     'print_regs': on_print_regs,
-    'print_call_stack': on_print_call_stack
+    'print_call_stack': on_print_call_stack,
+    'edn_rnd_data': on_edn_rnd_data,
+    'edn_urnd_data_valid': on_edn_urnd_data_valid
 }
 
 

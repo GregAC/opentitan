@@ -49,6 +49,8 @@ module otbn_top_sim (
   logic                     edn_rnd_req, edn_urnd_req;
   logic                     edn_rnd_ack, edn_urnd_ack;
   logic [EdnDataWidth-1:0]  edn_rnd_data, edn_urnd_data;
+  logic                     edn_rnd_data_valid;
+  logic                     edn_urnd_data_valid;
 
   otbn_core #(
     .ImemSizeByte ( ImemSizeByte ),
@@ -89,14 +91,33 @@ module otbn_top_sim (
     .edn_urnd_data_i ( edn_urnd_data   )
   );
 
-  // Tie-off EDN signals, eventually simulation will provide something here for testing RND
-  logic unused_edn_rnd_req, unused_edn_urnd_req;
-  assign unused_edn_rnd_req = edn_rnd_req;
-  assign unused_edn_urnd_req = edn_urnd_req;
-  assign edn_rnd_ack = 1'b0;
-  assign edn_rnd_data = '0;
-  assign edn_urnd_ack = 1'b0;
-  assign edn_urnd_data = '0;
+  otbn_mock_edn #(
+    .Width       ( WLEN                                                                  ),
+    .FixedEdnVal ( 256'h9999999999999999999999999999999999999999999999999999999999999999 )
+  ) u_mock_rnd_edn(
+    .clk_i      ( IO_CLK       ),
+    .rst_ni     ( IO_RST_N     ),
+
+    .edn_req_i  ( edn_rnd_req  ),
+    .edn_ack_o  ( edn_rnd_ack  ),
+    .edn_data_o ( edn_rnd_data )
+  );
+
+  assign edn_rnd_data_valid = edn_rnd_req & edn_rnd_ack;
+
+  otbn_mock_edn #(
+    .Width       ( WLEN                                                                  ),
+    .FixedEdnVal ( 256'h9999999999999999999999999999999999999999999999999999999999999999 )
+  ) u_mock_urnd_edn(
+    .clk_i      ( IO_CLK       ),
+    .rst_ni     ( IO_RST_N     ),
+
+    .edn_req_i  ( edn_urnd_req  ),
+    .edn_ack_o  ( edn_urnd_ack  ),
+    .edn_data_o ( edn_urnd_data )
+  );
+
+  assign edn_urnd_data_valid = edn_urnd_req & edn_urnd_ack;
 
   bind otbn_core otbn_trace_if #(.ImemAddrWidth, .DmemAddrWidth) i_otbn_trace_if (.*);
   bind otbn_core otbn_tracer u_otbn_tracer(.*, .otbn_trace(i_otbn_trace_if));
@@ -223,17 +244,21 @@ module otbn_top_sim (
     .ImemScope       ( ImemScope ),
     .DesignScope     ( DesignScope )
   ) u_otbn_core_model (
-    .clk_i        ( IO_CLK ),
-    .rst_ni       ( IO_RST_N ),
+    .clk_i                 ( IO_CLK ),
+    .rst_ni                ( IO_RST_N ),
 
-    .start_i      ( otbn_start ),
-    .done_o       ( otbn_model_done ),
+    .start_i               ( otbn_start ),
+    .done_o                ( otbn_model_done ),
 
-    .start_addr_i ( ImemStartAddr ),
+    .start_addr_i          ( ImemStartAddr ),
 
-    .err_bits_o   ( otbn_model_err_bits ),
+    .err_bits_o            ( otbn_model_err_bits ),
 
-    .err_o        ( otbn_model_err )
+    .err_o                 ( otbn_model_err ),
+
+    .edn_rnd_data_valid_i  ( edn_rnd_data_valid ),
+    .edn_rnd_data_i        ( edn_rnd_data ),
+    .edn_urnd_data_valid_i ( edn_urnd_data_valid )
   );
 
   bit done_mismatch_latched, err_bits_mismatch_latched;

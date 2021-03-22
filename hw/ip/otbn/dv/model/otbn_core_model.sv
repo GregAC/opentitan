@@ -40,22 +40,29 @@ module otbn_core_model
 
   input  logic [ImemAddrWidth-1:0] start_addr_i, // start byte address in IMEM
 
-  output bit err_o        // something went wrong
+  output bit err_o,        // something went wrong
+
+  input logic            edn_rnd_data_valid_i,
+  input logic [WLEN-1:0] edn_rnd_data_i,
+  input logic            edn_urnd_data_valid_i
 );
 
   import "DPI-C" function chandle otbn_model_init();
   import "DPI-C" function void otbn_model_destroy(chandle handle);
   import "DPI-C" context function
-    int unsigned otbn_model_step(chandle           model,
-                                 string            imem_scope,
-                                 int unsigned      imem_size,
-                                 string            dmem_scope,
-                                 int unsigned      dmem_size,
-                                 string            design_scope,
-                                 logic             start_i,
-                                 int unsigned      start_addr,
-                                 int unsigned      status,
-                                 inout bit [31:0]  err_code);
+    int unsigned otbn_model_step(chandle                model,
+                                 string                 imem_scope,
+                                 int unsigned           imem_size,
+                                 string                 dmem_scope,
+                                 int unsigned           dmem_size,
+                                 string                 design_scope,
+                                 logic                  start_i,
+                                 int unsigned           start_addr,
+                                 int unsigned           status,
+                                 inout bit [31:0]       err_code,
+                                 input logic            edn_rnd_data_valid_i,
+                                 input logic [WLEN-1:0] edn_rnd_data_i,
+                                 input logic            edn_urnd_data_valid_i);
 
   localparam int ImemSizeWords = ImemSizeByte / 4;
   localparam int DmemSizeWords = DmemSizeByte / (WLEN / 8);
@@ -113,7 +120,9 @@ module otbn_core_model
                                   DmemScope, DmemSizeWords,
                                   DesignScope,
                                   start_i, start_addr_32,
-                                  status, raw_err_bits_d);
+                                  status, raw_err_bits_d,
+                                  edn_rnd_data_valid_i, edn_rnd_data_i,
+                                  edn_urnd_data_valid_i);
         raw_err_bits_q <= raw_err_bits_d;
       end else begin
         // If we're not running and we're not being told to start, there's nothing to do.

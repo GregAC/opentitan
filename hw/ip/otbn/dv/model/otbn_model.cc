@@ -95,7 +95,10 @@ extern "C" unsigned otbn_model_step(OtbnModel *model, const char *imem_scope,
                                     unsigned dmem_words,
                                     const char *design_scope, svLogic start_i,
                                     unsigned start_addr, unsigned status,
-                                    svBitVecVal *err_bits /* bit [31:0] */);
+                                    svBitVecVal *err_bits, /* bit [31:0] */
+                                    svLogic edn_rnd_data_valid_i,
+                                    svLogicVecVal *edn_rnd_data,
+                                    svLogic edn_urnd_data_valid_i);
 
 // Use simutil_get_mem to read data one word at a time from the given scope and
 // collect the results up in a vector of uint8_t values.
@@ -258,7 +261,9 @@ static int start_model(OtbnModel *model, const char *imem_scope,
 // Step once in the model. Returns 1 if the model has finished, 0 if not and -1
 // on failure. If gen_trace is true, pass trace entries to the trace checker.
 // If the model has finished, writes otbn.ERR_BITS to *err_bits.
-static int step_model(OtbnModel *model, bool gen_trace, uint32_t *err_bits) {
+static int step_model(OtbnModel *model, bool edn_rnd_data_valid,
+                      uint32_t edn_rnd_data[8], bool edn_urnd_data_valid,
+                      bool gen_trace, uint32_t *err_bits) {
   assert(model);
   assert(err_bits);
 
@@ -268,6 +273,14 @@ static int step_model(OtbnModel *model, bool gen_trace, uint32_t *err_bits) {
   ISSWrapper &iss = *model->iss;
 
   try {
+    if (edn_rnd_data_valid) {
+      iss.edn_rnd_data(edn_rnd_data);
+    }
+
+    if (edn_urnd_data_valid) {
+      iss.edn_urnd_data_valid();
+    }
+
     std::pair<int, uint32_t> ret = iss.step(gen_trace);
     switch (ret.first) {
       case -1:
@@ -584,12 +597,21 @@ static void set_err_bits(svBitVecVal *dst, uint32_t src) {
   }
 }
 
+static void set_rnd_data(uint32_t *dst, svLogicVecVal *src) {
+  for (int i = 0; i < 8; ++i) {
+    dst[i] = src[i].aval;
+  }
+}
+
 extern "C" unsigned otbn_model_step(OtbnModel *model, const char *imem_scope,
                                     unsigned imem_words, const char *dmem_scope,
                                     unsigned dmem_words,
                                     const char *design_scope, svLogic start_i,
                                     unsigned start_addr, unsigned status,
-                                    svBitVecVal *err_bits /* bit [31:0] */) {
+                                    svBitVecVal *err_bits, /* bit [31:0] */
+                                    svLogic edn_rnd_data_valid_i,
+                                    svLogicVecVal *edn_rnd_data_i,
+                                    svLogic edn_urnd_data_valid_i) {
   assert(model && imem_scope && dmem_scope && design_scope && err_bits);
 
   // Run model checks if needed. This usually happens just after an operation
@@ -632,9 +654,23 @@ extern "C" unsigned otbn_model_step(OtbnModel *model, const char *imem_scope,
   if (!(status & RUNNING_BIT))
     return status;
 
+  bool edn_rnd_data_valid = false;
+  bool edn_urnd_data_valid = false;
+  uint32_t edn_rnd_data[8];
+
+  if (edn_rnd_data_valid_i) {
+    edn_rnd_data_valid = true;
+    set_rnd_data(edn_rnd_data, edn_rnd_data_i);
+  }
+
+  if (edn_urnd_data_valid_i) {
+    edn_urnd_data_valid = true;
+  }
+
   // Step the model once
   uint32_t int_err_bits;
-  switch (step_model(model, check_rtl, &int_err_bits)) {
+  switch (step_model(model, edn_rnd_data_valid, edn_rnd_data,
+                     edn_urnd_data_valid,  check_rtl, &int_err_bits)) {
     case 0:
       // Still running: no change
       break;
