@@ -617,12 +617,10 @@ module otbn_controller
     assign rf_bignum_rd_data_b_no_intg[i * 32 +: 32] = rf_bignum_rd_data_b_intg_i[i * 39 +: 32];
   end
 
-  assign rf_bignum_rd_addr_a_o = insn_dec_bignum_i.rf_a_indirect ? rf_base_rd_data_a_no_intg[4:0] :
-                                                                   insn_dec_bignum_i.a;
+  assign rf_bignum_rd_addr_a_o = insn_dec_bignum_i.a;
   assign rf_bignum_rd_en_a_o = insn_dec_bignum_i.rf_ren_a & insn_valid_i;
 
-  assign rf_bignum_rd_addr_b_o = insn_dec_bignum_i.rf_b_indirect ? rf_base_rd_data_b_no_intg[4:0] :
-                                                                   insn_dec_bignum_i.b;
+  assign rf_bignum_rd_addr_b_o = insn_dec_bignum_i.b;
   assign rf_bignum_rd_en_b_o = insn_dec_bignum_i.rf_ren_b & insn_valid_i;
 
   assign alu_bignum_operation_o.operand_a = rf_bignum_rd_data_a_no_intg;
@@ -696,16 +694,16 @@ module otbn_controller
   always_comb begin
     rf_bignum_wr_addr_o = insn_dec_bignum_i.d;
 
-    if (insn_dec_bignum_i.rf_d_indirect) begin
-      if (insn_dec_shared_i.ld_insn) begin
-        // Use sampled register index from first cycle of the load (in case the increment has
-        // changed the value in the mean-time).
-        rf_bignum_wr_addr_o = ld_insn_bignum_wr_addr_q;
-      end else begin
-        // Use read register index directly
-        rf_bignum_wr_addr_o = rf_base_rd_data_b_no_intg[4:0];
-      end
-    end
+    //if (insn_dec_bignum_i.rf_d_indirect) begin
+    //  if (insn_dec_shared_i.ld_insn) begin
+    //    // Use sampled register index from first cycle of the load (in case the increment has
+    //    // changed the value in the mean-time).
+    //    rf_bignum_wr_addr_o = ld_insn_bignum_wr_addr_q;
+    //  end else begin
+    //    // Use read register index directly
+    //    rf_bignum_wr_addr_o = rf_base_rd_data_b_no_intg[4:0];
+    //  end
+    //end
   end
 
   // For the shift-out variant of BN.MULQACC the bottom half of the MAC result is written to one
