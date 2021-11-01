@@ -315,6 +315,8 @@ class BEQ(OTBNInsn):
             state.stop_at_end_of_cycle(ErrBits.CALL_STACK)
             return
 
+        yield
+
         tgt_pc = self.offset & ((1 << 32) - 1)
         if val1 == val2:
             if not state.is_pc_valid(tgt_pc):
@@ -341,6 +343,8 @@ class BNE(OTBNInsn):
             state.stop_at_end_of_cycle(ErrBits.CALL_STACK)
             return
 
+        yield
+
         tgt_pc = self.offset & ((1 << 32) - 1)
         if val1 != val2:
             if not state.is_pc_valid(tgt_pc):
@@ -362,6 +366,8 @@ class JAL(OTBNInsn):
         mask32 = ((1 << 32) - 1)
         link_pc = (state.pc + 4) & mask32
         state.gprs.get_reg(self.grd).write_unsigned(link_pc)
+
+        yield
 
         next_pc = self.offset & mask32
         if not state.is_pc_valid(next_pc):
@@ -388,6 +394,8 @@ class JALR(OTBNInsn):
 
         mask32 = ((1 << 32) - 1)
         link_pc = (state.pc + 4) & mask32
+
+        yield
 
         state.gprs.get_reg(self.grd).write_unsigned(link_pc)
 
@@ -1121,6 +1129,7 @@ class BNSID(OTBNInsn):
             return
 
         wrs = grs2_val & 0x1f
+        yield
         wrs_val = state.wdrs.get_reg(wrs).read_unsigned()
 
         state.dmem.store_u256(addr, wrs_val)
@@ -1187,6 +1196,8 @@ class BNMOVR(OTBNInsn):
 
         wrd = grd_val & 0x1f
         wrs = grs_val & 0x1f
+
+        yield
 
         value = state.wdrs.get_reg(wrs).read_unsigned()
         state.wdrs.get_reg(wrd).write_unsigned(value)
