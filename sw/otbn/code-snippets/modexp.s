@@ -124,6 +124,35 @@ m0inv:
  * clobbered registers: x8, x10, x11, x16, w2, w3, w4, w5 to w[5+N-1]
  * clobbered flag groups: FG0
  */
+#cond_sub_mod:
+#
+#  /* setup pointers */
+#  li         x8, 5
+#  li        x10, 3
+#  li        x11, 2
+#
+#  /* reset flags for FG0 */
+#  bn.add    w31, w31, w31
+#
+#  /* iterate over all limbs for limb-wise subtraction + conditional selection*/
+#  loop      x30, 5
+#
+#    /* load a limb of modulus from dmem to w3 */
+#    bn.lid    x10, 0(x16++)
+#
+#    /* load the limb of bigint buffer to w2 */
+#    bn.movr   x11, x8
+#
+#    /* subtract the current limb of the modulus from current limb of bigint */
+#    bn.subb   w4, w2, w3
+#
+#    /* conditionally select subtraction result or unmodified limb */
+#    bn.sel    w3, w4, w2, FG1.C
+#
+#    /* move back result from w3 to bigint buffer */
+#    bn.movr   x8++, x10
+#
+#  ret
 cond_sub_mod:
 
   /* setup pointers */
@@ -134,14 +163,14 @@ cond_sub_mod:
   /* reset flags for FG0 */
   bn.add    w31, w31, w31
 
-  /* iterate over all limbs for limb-wise subtraction + conditional selection*/
-  loop      x30, 5
+  #/* iterate over all limbs for limb-wise subtraction + conditional selection*/
+  #loop      x30, 5
 
     /* load a limb of modulus from dmem to w3 */
     bn.lid    x10, 0(x16++)
 
     /* load the limb of bigint buffer to w2 */
-    bn.movr   x11, x8
+    bn.mov   w2, w5
 
     /* subtract the current limb of the modulus from current limb of bigint */
     bn.subb   w4, w2, w3
@@ -150,7 +179,112 @@ cond_sub_mod:
     bn.sel    w3, w4, w2, FG1.C
 
     /* move back result from w3 to bigint buffer */
-    bn.movr   x8++, x10
+    bn.mov   w5, w3
+
+    /* load a limb of modulus from dmem to w3 */
+    bn.lid    x10, 0(x16++)
+
+    /* load the limb of bigint buffer to w2 */
+    bn.mov   w2, w6
+
+    /* subtract the current limb of the modulus from current limb of bigint */
+    bn.subb   w4, w2, w3
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w3, w4, w2, FG1.C
+
+    /* move back result from w3 to bigint buffer */
+    bn.mov   w6, w3
+
+    /* load a limb of modulus from dmem to w3 */
+    bn.lid    x10, 0(x16++)
+
+    /* load the limb of bigint buffer to w2 */
+    bn.mov   w2, w7
+
+    /* subtract the current limb of the modulus from current limb of bigint */
+    bn.subb   w4, w2, w3
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w3, w4, w2, FG1.C
+
+    /* move back result from w3 to bigint buffer */
+    bn.mov   w7, w3
+
+    /* load a limb of modulus from dmem to w3 */
+    bn.lid    x10, 0(x16++)
+
+    /* load the limb of bigint buffer to w2 */
+    bn.mov   w2, w8
+
+    /* subtract the current limb of the modulus from current limb of bigint */
+    bn.subb   w4, w2, w3
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w3, w4, w2, FG1.C
+
+    /* move back result from w3 to bigint buffer */
+    bn.mov   w8, w3
+
+    /* load a limb of modulus from dmem to w3 */
+    bn.lid    x10, 0(x16++)
+
+    /* load the limb of bigint buffer to w2 */
+    bn.mov   w2, w9
+
+    /* subtract the current limb of the modulus from current limb of bigint */
+    bn.subb   w4, w2, w3
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w3, w4, w2, FG1.C
+
+    /* move back result from w3 to bigint buffer */
+    bn.mov   w9, w3
+
+    /* load a limb of modulus from dmem to w3 */
+    bn.lid    x10, 0(x16++)
+
+    /* load the limb of bigint buffer to w2 */
+    bn.mov   w2, w10
+
+    /* subtract the current limb of the modulus from current limb of bigint */
+    bn.subb   w4, w2, w3
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w3, w4, w2, FG1.C
+
+    /* move back result from w3 to bigint buffer */
+    bn.mov   w10, w3
+
+    /* load a limb of modulus from dmem to w3 */
+    bn.lid    x10, 0(x16++)
+
+    /* load the limb of bigint buffer to w2 */
+    bn.mov   w2, w11
+
+    /* subtract the current limb of the modulus from current limb of bigint */
+    bn.subb   w4, w2, w3
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w3, w4, w2, FG1.C
+
+    /* move back result from w3 to bigint buffer */
+    bn.mov   w11, w3
+
+    /* load a limb of modulus from dmem to w3 */
+    bn.lid    x10, 0(x16++)
+
+    /* load the limb of bigint buffer to w2 */
+    bn.mov   w2, w12
+
+    /* subtract the current limb of the modulus from current limb of bigint */
+    bn.subb   w4, w2, w3
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w3, w4, w2, FG1.C
+
+    /* move back result from w3 to bigint buffer */
+    bn.mov   w12, w3
 
   ret
 
@@ -213,7 +347,7 @@ compute_rr:
      => R^2 mod M can be computed by performing N*w duplications of R.
      We directly perform a modulo reduction in each step such that the
      final result will already be reduced. */
-  loop      x24, 18
+  loop      x24, 39
     /* reset pointer */
     li        x8, 5
 
@@ -223,15 +357,86 @@ compute_rr:
     /* Duplicate the intermediate bigint result. This can overflow such that
        bit 2^(N*w) (represented by the carry bit after the final loop cycle)
        is set. */
-    loop      x30, 3
+    #loop      x30, 3
+    #  /* copy current limb of bigint to w2 */
+    #  bn.movr   x11, x8
+
+    #  /* perform the doubling */
+    #  bn.addc   w2, w2, w2, FG1
+
+    #  /* copy result back to bigint in regfile */
+    #  bn.movr   x8++, x11
       /* copy current limb of bigint to w2 */
-      bn.movr   x11, x8
+      bn.mov   w2, w5
 
       /* perform the doubling */
       bn.addc   w2, w2, w2, FG1
 
       /* copy result back to bigint in regfile */
-      bn.movr   x8++, x11
+      bn.mov   w5, w2
+
+      /* copy current limb of bigint to w2 */
+      bn.mov   w2, w6
+
+      /* perform the doubling */
+      bn.addc   w2, w2, w2, FG1
+
+      /* copy result back to bigint in regfile */
+      bn.mov   w6, w2
+
+      /* copy current limb of bigint to w2 */
+      bn.mov   w2, w7
+
+      /* perform the doubling */
+      bn.addc   w2, w2, w2, FG1
+
+      /* copy result back to bigint in regfile */
+      bn.mov   w7, w2
+
+      /* copy current limb of bigint to w2 */
+      bn.mov   w2, w8
+
+      /* perform the doubling */
+      bn.addc   w2, w2, w2, FG1
+
+      /* copy result back to bigint in regfile */
+      bn.mov   w8, w2
+
+      /* copy current limb of bigint to w2 */
+      bn.mov   w2, w9
+
+      /* perform the doubling */
+      bn.addc   w2, w2, w2, FG1
+
+      /* copy result back to bigint in regfile */
+      bn.mov   w9, w2
+
+      /* copy current limb of bigint to w2 */
+      bn.mov   w2, w10
+
+      /* perform the doubling */
+      bn.addc   w2, w2, w2, FG1
+
+      /* copy result back to bigint in regfile */
+      bn.mov   w10, w2
+
+      /* copy current limb of bigint to w2 */
+      bn.mov   w2, w11
+
+      /* perform the doubling */
+      bn.addc   w2, w2, w2, FG1
+
+      /* copy result back to bigint in regfile */
+      bn.mov   w11, w2
+
+      /* copy current limb of bigint to w2 */
+      bn.mov   w2, w12
+
+      /* perform the doubling */
+      bn.addc   w2, w2, w2, FG1
+
+      /* copy result back to bigint in regfile */
+      bn.mov   w12, w2
 
     /* Conditionally subtract the modulus from the current bigint Y if there
        was an overflow. Again, just considering the lowest N*w bits is
@@ -374,23 +579,143 @@ cond_sub_to_reg:
   li        x13, 24
 
   /* iterate over all limbs for conditional limb-wise subtraction */
-  loop      x30, 6
+  #loop      x30, 6
+  #  /* load limb of subtrahend (input B) to w24 */
+  #  bn.lid    x13, 0(x16++)
+
+  #  /* load limb of minuend (input C) to w30 */
+  #  bn.movr   x12, x8
+
+  #  /* perform subtraction for a limb */
+  #  bn.subb   w29, w30, w24
+
+  #  bn.movr   x8, x13
+
+  #  /* conditionally select subtraction result or unmodified limb */
+  #  bn.sel    w24, w29, w30, FG1.C
+
+  #  /* store selection result in reg file */
+  #  bn.movr   x8++, x13
+
     /* load limb of subtrahend (input B) to w24 */
     bn.lid    x13, 0(x16++)
 
     /* load limb of minuend (input C) to w30 */
-    bn.movr   x12, x8
+    bn.mov   w30, w4
 
     /* perform subtraction for a limb */
     bn.subb   w29, w30, w24
-
-    bn.movr   x8, x13
 
     /* conditionally select subtraction result or unmodified limb */
     bn.sel    w24, w29, w30, FG1.C
 
     /* store selection result in reg file */
-    bn.movr   x8++, x13
+    bn.mov   w4, w24
+
+    /* load limb of subtrahend (input B) to w24 */
+    bn.lid    x13, 0(x16++)
+
+    /* load limb of minuend (input C) to w30 */
+    bn.mov   w30, w5
+
+    /* perform subtraction for a limb */
+    bn.subb   w29, w30, w24
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w24, w29, w30, FG1.C
+
+    /* store selection result in reg file */
+    bn.mov   w5, w24
+
+    /* load limb of subtrahend (input B) to w24 */
+    bn.lid    x13, 0(x16++)
+
+    /* load limb of minuend (input C) to w30 */
+    bn.mov   w30, w6
+
+    /* perform subtraction for a limb */
+    bn.subb   w29, w30, w24
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w24, w29, w30, FG1.C
+
+    /* store selection result in reg file */
+    bn.mov   w6, w24
+
+    /* load limb of subtrahend (input B) to w24 */
+    bn.lid    x13, 0(x16++)
+
+    /* load limb of minuend (input C) to w30 */
+    bn.mov   w30, w7
+
+    /* perform subtraction for a limb */
+    bn.subb   w29, w30, w24
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w24, w29, w30, FG1.C
+
+    /* store selection result in reg file */
+    bn.mov   w7, w24
+
+    /* load limb of subtrahend (input B) to w24 */
+    bn.lid    x13, 0(x16++)
+
+    /* load limb of minuend (input C) to w30 */
+    bn.mov   w30, w8
+
+    /* perform subtraction for a limb */
+    bn.subb   w29, w30, w24
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w24, w29, w30, FG1.C
+
+    /* store selection result in reg file */
+    bn.mov   w8, w24
+
+    /* load limb of subtrahend (input B) to w24 */
+    bn.lid    x13, 0(x16++)
+
+    /* load limb of minuend (input C) to w30 */
+    bn.mov   w30, w9
+
+    /* perform subtraction for a limb */
+    bn.subb   w29, w30, w24
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w24, w29, w30, FG1.C
+
+    /* store selection result in reg file */
+    bn.mov   w9, w24
+
+    /* load limb of subtrahend (input B) to w24 */
+    bn.lid    x13, 0(x16++)
+
+    /* load limb of minuend (input C) to w30 */
+    bn.mov   w30, w10
+
+    /* perform subtraction for a limb */
+    bn.subb   w29, w30, w24
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w24, w29, w30, FG1.C
+
+    /* store selection result in reg file */
+    bn.mov   w10, w24
+
+    /* load limb of subtrahend (input B) to w24 */
+    bn.lid    x13, 0(x16++)
+
+    /* load limb of minuend (input C) to w30 */
+    bn.mov   w30, w11
+
+    /* perform subtraction for a limb */
+    bn.subb   w29, w30, w24
+
+    /* conditionally select subtraction result or unmodified limb */
+    bn.sel    w24, w29, w30, FG1.C
+
+    /* store selection result in reg file */
+    bn.mov   w11, w24
   ret
 
 
