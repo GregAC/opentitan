@@ -65,6 +65,8 @@ class OTBNInsn:
     # false by the EmptyInsn subclass)
     has_bits = True
 
+    has_fetch_stall = False
+
     def __init__(self, raw: int, op_vals: Dict[str, int]):
         self.raw = raw
         self.op_vals = op_vals

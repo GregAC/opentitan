@@ -177,10 +177,9 @@ module otbn
   logic imem_req_core;
   logic imem_write_core;
   logic [ImemIndexWidth-1:0] imem_index_core;
-  logic [31:0] imem_wdata_core;
-  logic [31:0] imem_rdata_core;
+  logic [38:0] imem_rdata_core;
   logic imem_rvalid_core;
-  logic imem_rerror_core;
+  logic insn_fetch_err;
 
   logic imem_req_bus;
   logic imem_dummy_response_q, imem_dummy_response_d;
@@ -324,7 +323,7 @@ module otbn
   assign imem_req   = imem_access_core ? imem_req_core        : imem_req_bus;
   assign imem_write = imem_access_core ? imem_write_core      : imem_write_bus;
   assign imem_index = imem_access_core ? imem_index_core      : imem_index_bus;
-  assign imem_wdata = imem_access_core ? 39'(imem_wdata_core) : imem_wdata_bus;
+  assign imem_wdata = imem_access_core ? '0                   : imem_wdata_bus;
 
   assign imem_illegal_bus_access = imem_req_bus & imem_access_core;
 
@@ -353,22 +352,15 @@ module otbn
   // the currently executed instruction from IMEM through the bus
   // unintentionally.
   assign imem_rdata_bus  = !imem_access_core && !illegal_bus_access_q ? imem_rdata : 39'b0;
-  assign imem_rdata_core = imem_rdata[31:0];
+  assign imem_rdata_core = imem_rdata;
 
   // When an illegal bus access is seen, always return a dummy response the follow cycle.
   assign imem_rvalid_bus  = (~imem_access_core & imem_rvalid) | imem_dummy_response_q;
   assign imem_rvalid_core = imem_access_core ? imem_rvalid : 1'b0;
 
-  // imem_rerror_bus is passed to a TLUL adapter to report read errors back to the TL interface.
-  // We've squashed together the 2 bits from ECC into a single (uncorrectable) error, but the TLUL
-  // adapter expects the original ECC format. Send imem_rerror as bit 1, signalling an
-  // uncorrectable error.
-  //
-  // The mux ensures that imem_rerror doesn't appear on the bus (possibly leaking information) when
-  // the core is operating. Since rerror depends on rvalid, we could avoid this mux. However that
-  // seems a bit fragile, so we err on the side of caution.
-  assign imem_rerror_bus  = !imem_access_core ? {imem_rerror, 1'b0} : 2'b00;
-  assign imem_rerror_core = imem_rerror;
+  // No imem errors reported for bus reads. Integrity is carried through on the bus so integrity
+  // checking on TL responses will pick up any errors.
+  assign imem_rerror_bus = 1'b0;
 
   // Data Memory (DMEM) ========================================================
 
@@ -659,8 +651,8 @@ module otbn
 
   // FATAL_ALERT_CAUSE register. The .de and .d values are equal for each bit, so that it can only
   // be set, not cleared.
-  assign hw2reg.fatal_alert_cause.imem_intg_violation.de = imem_rerror;
-  assign hw2reg.fatal_alert_cause.imem_intg_violation.d  = imem_rerror;
+  assign hw2reg.fatal_alert_cause.imem_intg_violation.de = insn_fetch_err;
+  assign hw2reg.fatal_alert_cause.imem_intg_violation.d  = insn_fetch_err;
   assign hw2reg.fatal_alert_cause.dmem_intg_violation.de = dmem_rerror;
   assign hw2reg.fatal_alert_cause.dmem_intg_violation.d  = dmem_rerror;
   // TODO: Register file errors
@@ -688,7 +680,7 @@ module otbn
                                   reg2hw.alert_test.recov.qe;
 
   logic [NumAlerts-1:0] alerts;
-  assign alerts[AlertFatal] = imem_rerror          |
+  assign alerts[AlertFatal] = insn_fetch_err       |
                               dmem_rerror          |
                               bus_intg_violation   |
                               illegal_bus_access_d |
@@ -849,10 +841,10 @@ module otbn
 
       .imem_req_o             (imem_req_core),
       .imem_addr_o            (imem_addr_core),
-      .imem_wdata_o           (imem_wdata_core),
       .imem_rdata_i           (imem_rdata_core),
       .imem_rvalid_i          (imem_rvalid_core),
-      .imem_rerror_i          (imem_rerror_core),
+
+      .insn_fetch_err_o       (insn_fetch_err),
 
       .dmem_req_o             (dmem_req_core),
       .dmem_write_o           (dmem_write_core),
@@ -899,10 +891,10 @@ module otbn
 
       .imem_req_o             (imem_req_core),
       .imem_addr_o            (imem_addr_core),
-      .imem_wdata_o           (imem_wdata_core),
       .imem_rdata_i           (imem_rdata_core),
       .imem_rvalid_i          (imem_rvalid_core),
-      .imem_rerror_i          (imem_rerror_core),
+
+      .insn_fetch_err_o       (insn_fetch_err),
 
       .dmem_req_o             (dmem_req_core),
       .dmem_write_o           (dmem_write_core),

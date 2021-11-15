@@ -56,8 +56,9 @@ class FsmState(IntEnum):
     '''
     IDLE = 0
     PRE_EXEC = 10
-    EXEC = 11
-    POST_EXEC = 12
+    FETCH_WAIT = 11
+    EXEC = 12
+    POST_EXEC = 13
     LOCKING = 13
     LOCKED = 2550
 
@@ -203,7 +204,13 @@ class OTBNState:
         if self.fsm_state == FsmState.PRE_EXEC:
             self.ext_regs.commit()
             if self._urnd_reseed_complete:
-                self.fsm_state = FsmState.EXEC
+                self.fsm_state = FsmState.FETCH_WAIT
+
+            return
+
+        if self.fsm_state == FsmState.FETCH_WAIT:
+            self.ext_regs.commit()
+            self.fsm_state = FsmState.EXEC
 
             return
 
