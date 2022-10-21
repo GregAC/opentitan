@@ -22,10 +22,10 @@ class otbn_escalate_vseq extends otbn_base_vseq;
     // Pick whether we're going to send RMA request or escalation to OTBN.
     select_rma_req = $urandom_range(0, 1);
 
-    // Pick whether we're going before (5%), during (90%), or after (5%).
+    // Pick whether we're going before (30%), during (40%), or after (30%).
     bda_idx = $urandom_range(100);
-    go_before = bda_idx < 5;
-    go_during = 5 <= bda_idx && bda_idx < 95;
+    go_before = bda_idx < 30;
+    go_during = 30 <= bda_idx && bda_idx < 95;
     go_after = 95 <= bda_idx;
 
     fork
