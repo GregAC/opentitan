@@ -1228,7 +1228,7 @@ module otbn
         $changed(
           u_otbn_core.u_otbn_rf_base.gen_rf_base_ff.u_otbn_rf_base_inner.g_rf_flops[i].rf_reg_q)
         within $rose(busy_secure_wipe) ##[0:$] $fell(busy_secure_wipe)),
-      clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+      clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
   end
 
   // WDR assertions for secure wipe
@@ -1254,7 +1254,7 @@ module otbn
               $changed(
                 u_otbn_core.u_otbn_rf_bignum.gen_rf_bignum_ff.u_otbn_rf_bignum_inner.rf[i])
               within $rose(busy_secure_wipe) ##[0:$] $fell(busy_secure_wipe)),
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
   end
 
   // Secure wipe needs to invalidate call and loop stack, initialize MOD, ACC to nonzero and set
@@ -1264,42 +1264,42 @@ module otbn
   // secure wiping complete.
   `ASSERT(SecWipeInvalidCallStack_A,
           $fell(busy_secure_wipe) |-> (!u_otbn_core.u_otbn_rf_base.u_call_stack.top_valid_o),
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
   `ASSERT(SecWipeInvalidLoopStack_A,
           $fell(busy_secure_wipe) |->
             (!u_otbn_core.u_otbn_controller.u_otbn_loop_controller.loop_info_stack.top_valid_o),
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
 
   `ASSERT(SecWipeNonZeroMod_A,
           $fell(busy_secure_wipe) |-> u_otbn_core.u_otbn_alu_bignum.mod_intg_q != EccWideZeroWord,
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
 
   `ASSERT(SecWipeNonZeroACC_A,
           $fell(busy_secure_wipe) |->
             u_otbn_core.u_otbn_alu_bignum.ispr_acc_intg_i != EccWideZeroWord,
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
 
   `ASSERT(SecWipeNonZeroFlags_A,
           $fell(busy_secure_wipe) |-> (!u_otbn_core.u_otbn_alu_bignum.flags_flattened),
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
 
   // Secure wipe of IMEM and DMEM first happens with a key change from URND (while valid is zero)
   `ASSERT(ImemSecWipeRequiresUrndKey_A,
           $rose(imem_sec_wipe) |=> (otbn_imem_scramble_key == $past(imem_sec_wipe_urnd_key)),
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
   `ASSERT(DmemSecWipeRequiresUrndKey_A,
           $rose(dmem_sec_wipe) |=> (otbn_dmem_scramble_key == $past(dmem_sec_wipe_urnd_key)),
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
 
   // Then it is guaranteed to have a valid key from OTP interface which is different from URND key
   `ASSERT(ImemSecWipeRequiresOtpKey_A,
           $rose(imem_sec_wipe) ##1 (otbn_imem_scramble_key == $past(imem_sec_wipe_urnd_key)) |=>
             ##[0:$] otbn_imem_scramble_valid && $changed(otbn_imem_scramble_key),
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err)
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
   `ASSERT(DmemSecWipeRequiresOtpKey_A,
           $rose(dmem_sec_wipe) ##1 (otbn_dmem_scramble_key == $past(dmem_sec_wipe_urnd_key)) |=>
             ##[0:$] otbn_dmem_scramble_valid && $changed(otbn_dmem_scramble_key),
-          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err )
+          clk_i, !rst_ni || u_otbn_core.urnd_reseed_err || err_bits.bad_internal_state)
 
   // All outputs should be known value after reset
   `ASSERT_KNOWN(TlODValidKnown_A, tl_o.d_valid)
