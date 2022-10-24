@@ -456,6 +456,10 @@ interface otbn_trace_if
   assign controller_bad_int_i.state_err = u_otbn_controller.state_error;
   assign controller_bad_int_i.controller_mubi_err = u_otbn_controller.mubi_err_q;
 
+
+  otbn_start_stop_state_e otbn_start_stop_state;
+  assign otbn_start_stop_state = u_otbn_start_stop_control.state_q;
+
   // Only define force/release functions if we're not running Verilator. This is because the version
   // we currently use does not support force/release.
   `ifndef VERILATOR
