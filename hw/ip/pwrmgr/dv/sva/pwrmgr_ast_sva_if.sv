@@ -64,9 +64,9 @@ interface pwrmgr_ast_sva_if #(
     `ASSERT(MainClkStopped_A,
             $fell(
                 pwr_ast_i.core_clk_val
-            ) |=> ($stable(
+            ) |=> (($stable(
                 main_clk_cycles
-            ) throughout (!pwr_ast_i.core_clk_val) [* 1: $]),
+            ) throughout (!pwr_ast_i.core_clk_val) [*1:$]) or $rose(pwr_ast_i.core_clk_val)),
             clk_slow_i, reset_or_disable)
     `ASSERT(MainClkRun_A, $rose(pwr_ast_i.core_clk_val) |=> !($stable(main_clk_cycles)),
             clk_slow_i, reset_or_disable)
@@ -74,9 +74,9 @@ interface pwrmgr_ast_sva_if #(
     `ASSERT(IOClkStopped_A,
             $fell(
                 pwr_ast_i.io_clk_val
-            ) |=> ($stable(
+            ) |=> (($stable(
                 io_clk_cycles
-            ) throughout (!pwr_ast_i.io_clk_val) [* 1: $]),
+            ) throughout (!pwr_ast_i.io_clk_val) [*1:$]) or $rose(pwr_ast_i.io_clk_val)),
             clk_slow_i, reset_or_disable)
     `ASSERT(IOClkRun_A, $rose(pwr_ast_i.io_clk_val) |=> !($stable(io_clk_cycles)), clk_slow_i,
             reset_or_disable)
@@ -84,9 +84,9 @@ interface pwrmgr_ast_sva_if #(
     `ASSERT(USBClkStopped_A,
             $fell(
                 pwr_ast_i.usb_clk_val
-            ) |=> ($stable(
+            ) |=> (($stable(
                 usb_clk_cycles
-            ) throughout (!pwr_ast_i.usb_clk_val) [* 1: $]),
+            ) throughout (!pwr_ast_i.usb_clk_val) [*1:$]) or $rose(pwr_ast_i.usb_clk_val)),
             clk_slow_i, reset_or_disable)
     `ASSERT(USBClkRun_A, $rose(pwr_ast_i.usb_clk_val) |=> !($stable(usb_clk_cycles)), clk_slow_i,
             reset_or_disable)
