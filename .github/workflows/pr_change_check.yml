@@ -22,6 +22,7 @@ jobs:
 
       - name: Determine changed files
         run: |
+          echo "I made a change that took effect!"
           pr_ref="refs/pull/${{ github.event.number }}/merge"
           echo $pr_ref
           git fetch origin $pr_ref
