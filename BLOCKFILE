@@ -14,5 +14,3 @@
 # comment.
 #
 # At least two committers must authorize the change to pass.
-
-hw/ip/*/rtl/*
