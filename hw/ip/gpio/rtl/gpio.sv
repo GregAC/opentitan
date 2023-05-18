@@ -18,11 +18,6 @@ module gpio
 
   // Bus interface
   input  tlul_pkg::tl_h2d_t tl_i,
-  output tlul_pkg::tl_d2h_t tl_o,
-
-  // Interrupts
-  output logic [31:0] intr_gpio_o,
-
   // Alerts
   input  prim_alert_pkg::alert_rx_t [NumAlerts-1:0] alert_rx_i,
   output prim_alert_pkg::alert_tx_t [NumAlerts-1:0] alert_tx_o,
@@ -49,8 +44,6 @@ module gpio
       .AsyncOn(GpioAsyncOn),
       .CntWidth(CntWidth)
     ) u_filter (
-      .clk_i,
-      .rst_ni,
       .enable_i(reg2hw.ctrl_en_input_filter.q[i]),
       .filter_i(cio_gpio_i[i]),
       .thresh_i({CntWidth{1'b1}}),
