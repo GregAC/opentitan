@@ -304,13 +304,6 @@ module otbn_core
     .secure_wipe_ack_o (secure_wipe_ack),
     .secure_wipe_running_o,
     .done_o,
-
-    .sec_wipe_wdr_o      (sec_wipe_wdr_d),
-    .sec_wipe_wdr_urnd_o (sec_wipe_wdr_urnd_d),
-    .sec_wipe_base_o     (sec_wipe_base),
-    .sec_wipe_base_urnd_o(sec_wipe_base_urnd),
-    .sec_wipe_addr_o     (sec_wipe_addr),
-
     .sec_wipe_acc_urnd_o(sec_wipe_acc_urnd),
     .sec_wipe_mod_urnd_o(sec_wipe_mod_urnd),
     .sec_wipe_zero_o    (sec_wipe_zero),

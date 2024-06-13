@@ -188,9 +188,6 @@ module otbn
     .NumCopies(1)
   ) u_lc_rma_req_sync (
     .clk_i,
-    .rst_ni,
-    .lc_en_i(lc_rma_req_i),
-    .lc_en_o({lc_rma_req})
   );
 
   // Internally, OTBN uses MUBI types.
