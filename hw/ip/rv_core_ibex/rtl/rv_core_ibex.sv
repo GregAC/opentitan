@@ -20,7 +20,6 @@ module rv_core_ibex
   parameter int unsigned          MHPMCounterWidth = 32,
   parameter bit                   RV32E            = 0,
   parameter ibex_pkg::rv32m_e     RV32M            = ibex_pkg::RV32MSingleCycle,
-  parameter ibex_pkg::rv32b_e     RV32B            = ibex_pkg::RV32BOTEarlGrey,
   parameter ibex_pkg::regfile_e   RegFile          = ibex_pkg::RegFileFF,
   parameter bit                   BranchTargetALU  = 1'b1,
   parameter bit                   WritebackStage   = 1'b1,
